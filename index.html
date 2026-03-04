@@ -108,8 +108,8 @@
             progressBar.style.width = '100%';
             progressText.innerText = "Done!";
             
-            outputDiv.innerText = data.text || "No content.";
-            reviewDiv.innerText = data.reviewNotes || "N/A";
+            outputDiv.innerText = data ?? "No content.";
+           // reviewDiv.innerText = data
 
         } catch (err) {
             outputDiv.innerText = "Error: " + err.message;
@@ -127,5 +127,6 @@
 </script>
 </body>
 </html>
+
 
 
