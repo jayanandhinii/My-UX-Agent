@@ -107,9 +107,10 @@
             clearInterval(interval);
             progressBar.style.width = '100%';
             progressText.innerText = "Done!";
-            
-            outputDiv.innerText = data ?? "No content.";
-           // reviewDiv.innerText = data
+            const finalMarkdown = data.markdown_guide || data.text || "No content generated.";
+const finalReview = data.reviewNotes || data.review_notes || "Refinement complete.";
+            outputDiv.innerText = finalMarkdown
+           reviewDiv.innerText = finalReview
 
         } catch (err) {
             outputDiv.innerText = "Error: " + err.message;
@@ -127,6 +128,7 @@
 </script>
 </body>
 </html>
+
 
 
 
