@@ -107,7 +107,8 @@
             clearInterval(interval);
             progressBar.style.width = '100%';
             progressText.innerText = "Done!";
-
+             setTimeout(() => { progressContainer.style.display = 'none'; progressText.innerText = ""; }, 2500);
+const keys = Object.keys(data);
         const sortedKeys = keys.sort((a, b) => {
     const valA = String(data[a] || "").length;
     const valB = String(data[b] || "").length;
@@ -139,6 +140,7 @@ console.log(`DEBUG: Dynamically mapped ${sortedKeys[1]} -> Review`);
 </script>
 </body>
 </html>
+
 
 
 
