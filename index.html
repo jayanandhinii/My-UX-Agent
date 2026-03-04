@@ -107,8 +107,18 @@
             clearInterval(interval);
             progressBar.style.width = '100%';
             progressText.innerText = "Done!";
-            const finalMarkdown = data.markdown_guide || data.text || "No content generated.";
-const finalReview = data.reviewNotes || data.review_notes || "Refinement complete.";
+        const sortedKeys = keys.sort((a, b) => {
+    const valA = String(data[a] || "").length;
+    const valB = String(data[b] || "").length;
+    return valB - valA; 
+});
+
+// 3. Dynamically assign based on "Value Size"
+const finalMarkdown = data[sortedKeys[0]] || "No content generated.";
+const finalReview = data[sortedKeys[1]] || "No review notes provided.";
+
+console.log(`DEBUG: Dynamically mapped ${sortedKeys[0]} -> Output`);
+console.log(`DEBUG: Dynamically mapped ${sortedKeys[1]} -> Review`);
             outputDiv.innerText = finalMarkdown
            reviewDiv.innerText = finalReview
 
@@ -128,6 +138,7 @@ const finalReview = data.reviewNotes || data.review_notes || "Refinement complet
 </script>
 </body>
 </html>
+
 
 
 
