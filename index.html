@@ -103,7 +103,7 @@
             });
 
             const data = await response.json();
-            
+            console.log("Response:::",data) 
             clearInterval(interval);
             progressBar.style.width = '100%';
             progressText.innerText = "Done!";
@@ -127,4 +127,5 @@
 </script>
 </body>
 </html>
+
 
