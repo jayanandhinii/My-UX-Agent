@@ -63,8 +63,10 @@
         </div>
     </div>
 </div>
-
 <script>
+    // 1. GLOBAL MEMORY: This stores the Phase 1 audit so the AI remembers it for Phase 2
+    let sessionHistory = ""; 
+
     async function runAgent() {
         const notes = document.getElementById('userInput').value;
         const imageInput = document.getElementById('imageInput');
@@ -79,8 +81,15 @@
 
         if (!notes.trim() && !imageFile) return alert("Please upload an image for Phase 1 or provide notes for Phase 2!");
 
+        // 2. FORM DATA: Sending notes, image, AND history
         const formData = new FormData();
         formData.append('notes', notes);
+        
+        // If we have a previous audit in memory, attach it!
+        if (sessionHistory) {
+            formData.append('history', sessionHistory);
+        }
+
         if (imageFile) formData.append('image', imageFile);
 
         // UI Feedback
@@ -94,12 +103,12 @@
             if (width < 95) {
                 width += 1;
                 progressBar.style.width = width + '%';
-                progressText.innerText = imageFile ? "Phase 1: Analyzing Screen Elements..." : "Phase 2: Generating Content Variants...";
+                // Update feedback based on whether it's a new audit or a refinement
+                progressText.innerText = imageFile ? "Phase 1: Analyzing Screen..." : "Phase 2: Refining with Context...";
             }
         }, 150);
 
         try {
-            // Updated Lambda URL
             const LAMBDA_URL = "https://yk2tf47ong3um7xxo2fgzhob7e0qaajx.lambda-url.ap-south-1.on.aws/";
 
             const response = await fetch(LAMBDA_URL, {
@@ -107,26 +116,32 @@
                 body: formData 
             });
 
+            // Handle Server Errors (like timeouts)
+            if (!response.ok) {
+                const errorText = await response.text();
+                throw new Error(`Server Error: ${errorText}`);
+            }
+
             const data = await response.json();
-            console.log("Response Received:", data);
+            
+            // 3. UPDATE MEMORY: Save the AI's response for the next follow-up
+            sessionHistory = data.text; 
 
             clearInterval(interval);
             progressBar.style.width = '100%';
             progressText.innerText = "Task Complete";
 
-            // Mapping Logic: The Agent returns a single 'text' block containing Markdown
-            // We use .innerText to preserve the AI's formatting and tables
             outputDiv.innerText = data.text || "No response from agent.";
             outputDiv.style.opacity = "1";
 
-            // Auto-clear image after Phase 1 so next click defaults to Phase 2 (notes)
+            // If an image was uploaded, clear it so the NEXT click is Phase 2 (Context mode)
             if (imageFile) {
                 imageInput.value = ""; 
             }
 
         } catch (err) {
             console.error("Fetch Error:", err);
-            outputDiv.innerText = "Error: " + err.message;
+            outputDiv.innerText = "Error: " + err.message + "\n\nTry increasing your Lambda Timeout to 60s in the AWS Console.";
             clearInterval(interval);
         } finally {
             btn.disabled = false;
@@ -144,11 +159,14 @@
         alert("Content copied to clipboard!");
     }
 
+    // 4. RESET: Clear history to start a brand new screen analysis
     function clearInputs() {
+        sessionHistory = ""; 
         document.getElementById('userInput').value = "";
         document.getElementById('imageInput').value = "";
-        document.getElementById('output').innerText = "Analysis or rewritten content will appear here...";
+        document.getElementById('output').innerText = "Memory cleared. Upload a new image to start Phase 1.";
     }
 </script>
 </body>
 </html>
+
