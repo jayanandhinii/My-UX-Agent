@@ -43,7 +43,7 @@
 <div class="container py-5">
     <div class="text-center mb-5">
         <h1 class="display-5 fw-bold text-primary">Hi Jaya</h1>
-        <p class="text-muted">UX Audit & Content Refinement Agent</p>
+        <p class="text-muted">UX & Content Refinement Agent</p>
     </div>
 
     <div class="row g-4 justify-content-center">
@@ -56,11 +56,11 @@
                 
                 <div class="mb-4">
                     <label class="input-label">Context / Instructions</label>
-                    <textarea id="userInput" class="form-control" style="height: 250px;" placeholder="Describe the feature, paste raw text labels, or ask for specific refinements..."></textarea>
+                    <textarea id="userInput" class="form-control" style="height: 250px;" placeholder="Enter your Content"></textarea>
                 </div>
 
                 <button id="genBtn" onclick="runAgent()" class="btn btn-primary btn-lg w-100 shadow-sm">
-                    Run Smart Audit
+                    Run the agent
                     <span id="spinner" class="spinner-border spinner-border-sm loading-spinner ms-2"></span>
                 </button>
             </div>
@@ -146,7 +146,7 @@
             sessionHistory = rawText; 
             outputDiv.innerHTML = marked.parse(rawText);
 
-            progressText.innerText = "Audit Complete";
+            progressText.innerText = "Generation completed";
             progressBar.style.width = '100%';
             outputDiv.style.opacity = "1";
 
@@ -181,3 +181,4 @@
 </script>
 </body>
 </html>
+
