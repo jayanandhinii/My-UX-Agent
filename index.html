@@ -153,7 +153,7 @@
 
         } catch (err) {
             console.error(err);
-            outputDiv.innerHTML = `<div class="alert alert-danger"><strong>Error:</strong> ${err.message}<br><small>Check if the Lambda URL is active and CORS is enabled.</small></div>`;
+            outputDiv.innerHTML = `<div class="alert alert-danger"><strong>Error:</strong> ${err}<br><small>Check if the Lambda URL is active and CORS is enabled.</small></div>`;
             clearInterval(interval);
         } finally {
             btn.disabled = false;
