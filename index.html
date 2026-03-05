@@ -9,17 +9,23 @@
     <style>
         body { background-color: #f0f2f5; font-family: 'Inter', sans-serif; }
         .card { border: none; border-radius: 16px; box-shadow: 0 8px 24px rgba(0,0,0,0.1); }
+        
         #output { 
             min-height: 500px; background: white; border: 1px solid #dee2e6; border-radius: 8px; 
-            padding: 20px; font-size: 15px; line-height: 1.6; overflow-x: auto; 
+            padding: 25px; font-size: 15px; line-height: 1.6; overflow-x: auto; color: #333;
         }
-        /* Markdown Table Styling */
-        #output table { width: 100%; margin-bottom: 1rem; border-collapse: collapse; }
-        #output th { background-color: #f8f9fa; border: 1px solid #dee2e6; padding: 10px; text-align: left; }
-        #output td { border: 1px solid #dee2e6; padding: 10px; vertical-align: top; }
+
+        /* Improved Table Styling for Markdown */
+        #output table { width: 100%; margin-bottom: 1.5rem; border-collapse: collapse; border: 1px solid #eee; }
+        #output th { background-color: #f8f9fa; border: 1px solid #dee2e6; padding: 12px; text-align: left; font-weight: 600; color: #0d6efd; }
+        #output td { border: 1px solid #dee2e6; padding: 12px; vertical-align: top; }
+        #output tr:nth-child(even) { background-color: #fafafa; }
         
-        .step-label { font-weight: 700; color: #0d6efd; margin-bottom: 8px; display: block; }
-        .progress { height: 8px; display: none; margin-bottom: 20px; }
+        .step-label { font-weight: 700; color: #0d6efd; margin-bottom: 8px; display: block; font-size: 0.9rem; text-transform: uppercase; }
+        .progress { height: 8px; display: none; margin-bottom: 20px; border-radius: 10px; }
+        
+        .btn-primary { background-color: #0d6efd; border: none; padding: 12px; font-weight: 600; border-radius: 8px; transition: all 0.3s; }
+        .btn-primary:hover { background-color: #0b5ed7; transform: translateY(-1px); }
     </style>
 </head>
 <body>
@@ -27,12 +33,12 @@
 <div class="container py-5">
     <div class="text-center mb-5">
         <h1 class="fw-bold text-primary">Hi Jaya</h1>
-        <p class="text-muted">UX Audit & Content Refinement</p>
+        <p class="text-muted">UX Audit & Content Refinement System</p>
     </div>
 
     <div class="row g-4">
         <div class="col-lg-5">
-            <div class="card p-4">
+            <div class="card p-4 h-100">
                 
                 <div class="mb-4">
                     <label class="step-label">Phase 1: Source (Image)</label>
@@ -40,33 +46,40 @@
                 </div>
 
                 <div class="mb-4">
-                    <label class="step-label">Phase 1: Source (Text Audit)</label>
-                    <textarea id="sourceText" class="form-control" rows="3" placeholder="Paste UI labels if no image is available..."></textarea>
+                    <label class="step-label text-success">Phase 1: Source (Text Audit)</label>
+                    <textarea id="sourceText" class="form-control" rows="3" placeholder="Paste UI labels or copy here if no image..."></textarea>
                 </div>
 
-                <hr>
+                <hr class="my-4">
 
                 <div class="mb-4">
                     <label class="step-label" style="color: #fd7e14;">Phase 2: Refinement / Clarity</label>
+                    <p class="small text-muted">Provide feedback or ask for changes to the previous result.</p>
                     <textarea id="userInput" class="form-control" style="height: 120px;" placeholder="e.g., 'Make the table shorter' or 'Change tone to professional'"></textarea>
                 </div>
 
-                <button id="genBtn" onclick="runAgent()" class="btn btn-primary btn-lg w-100">Run Agent Logic</button>
+                <button id="genBtn" onclick="runAgent()" class="btn btn-primary btn-lg w-100">
+                    Run Agent Logic
+                </button>
             </div>
         </div>
 
         <div class="col-lg-7">
             <div class="card p-4 h-100">
-                <div id="progressText" class="text-muted mb-2 small fw-bold">Ready for input</div>
+                <div class="d-flex justify-content-between align-items-center mb-2">
+                    <div id="progressText" class="text-muted small fw-bold">Ready</div>
+                    <span id="loadingSpinner" class="spinner-border spinner-border-sm text-primary" style="display: none;"></span>
+                </div>
+                
                 <div class="progress" id="progressContainer">
                     <div id="progressBar" class="progress-bar progress-bar-striped progress-bar-animated bg-success" style="width: 0%"></div>
                 </div>
 
                 <div id="output">Polished UX audit will appear here...</div>
                 
-                <div class="mt-3 d-flex gap-2">
-                    <button onclick="copyToClipboard()" class="btn btn-sm btn-outline-secondary">Copy Content</button>
-                    <button onclick="clearAll()" class="btn btn-sm btn-outline-danger">Clear Memory</button>
+                <div class="mt-4 d-flex gap-2">
+                    <button onclick="copyToClipboard()" class="btn btn-sm btn-outline-secondary px-3">Copy Content</button>
+                    <button onclick="clearAll()" class="btn btn-sm btn-outline-danger px-3">Clear Memory</button>
                 </div>
             </div>
         </div>
@@ -74,7 +87,6 @@
 </div>
 
 <script>
-    // THE "HISTORY" VARIABLE: This is where we store the AI's memory for the next call.
     let sessionHistory = ""; 
 
     async function runAgent() {
@@ -87,55 +99,79 @@
         const progressBar = document.getElementById('progressBar');
         const progressContainer = document.getElementById('progressContainer');
         const progressText = document.getElementById('progressText');
+        const spinner = document.getElementById('loadingSpinner');
+
+        // Validation: Need at least one source or history
+        if (!imageFile && !sourceText && !sessionHistory) {
+            alert("Please provide a Phase 1 source (Image or Text) to begin.");
+            return;
+        }
 
         const formData = new FormData();
-        formData.append('notes', notes); // Phase 2 input
-        formData.append('sourceText', sourceText); // Phase 1 Text input
-        formData.append('history', sessionHistory); // The "Memory"
+        formData.append('notes', notes); 
+        formData.append('sourceText', sourceText); 
+        formData.append('history', sessionHistory); 
         if (imageFile) formData.append('image', imageFile);
 
-        // UI State
+        // UI Initialization
         btn.disabled = true;
+        spinner.style.display = "block";
         progressContainer.style.display = 'flex';
         outputDiv.style.opacity = "0.5";
         
-        // Progress Bar Simulation
         let width = 0;
         const interval = setInterval(() => {
             if (width < 90) {
-                width += 1;
+                width += 1.5;
                 progressBar.style.width = width + '%';
-                progressText.innerText = "Processing & Refining...";
+                progressText.innerText = "Double-checking & Refining...";
             }
-        }, 100);
+        }, 150);
 
         try {
             const LAMBDA_URL = "https://yk2tf47ong3um7xxo2fgzhob7e0qaajx.lambda-url.ap-south-1.on.aws/";
             const response = await fetch(LAMBDA_URL, { method: 'POST', body: formData });
+            
+            if (!response.ok) throw new Error(`Server Error: ${response.status}`);
+            
             const data = await response.json();
             
-            // 1. UPDATE HISTORY: Store the new result so the next Phase 2 call knows about it.
-            sessionHistory = data.text;
+            // --- SAFETY CHECK TO PREVENT MARKED ERROR ---
+            const finalContent = data.text || data.result || ""; 
 
-            // 2. RENDER: Convert Markdown to HTML
-            outputDiv.innerHTML = marked.parse(data.text);
+            if (!finalContent) {
+                outputDiv.innerHTML = `<div class="alert alert-warning">The agent processed the request but returned no text. Check your Lambda logs.</div>`;
+            } else {
+                sessionHistory = finalContent; // Store for next Phase 2 run
+                outputDiv.innerHTML = marked.parse(finalContent); // Safe parse
+            }
 
             clearInterval(interval);
             progressBar.style.width = '100%';
-            progressText.innerText = "Task Complete";
+            progressText.innerText = "Done";
             outputDiv.style.opacity = "1";
 
         } catch (err) {
-            outputDiv.innerHTML = `<div class="alert alert-danger">Error: ${err.message}</div>`;
+            console.error(err);
+            outputDiv.innerHTML = `<div class="alert alert-danger"><strong>Error:</strong> ${err.message}<br><small>Check if the Lambda URL is active and CORS is enabled.</small></div>`;
+            clearInterval(interval);
         } finally {
             btn.disabled = false;
-            setTimeout(() => { progressContainer.style.display = 'none'; }, 2000);
+            spinner.style.display = "none";
+            setTimeout(() => { 
+                progressContainer.style.display = 'none'; 
+                progressBar.style.width = '0%';
+            }, 3000);
         }
     }
 
     function copyToClipboard() {
-        navigator.clipboard.writeText(document.getElementById('output').innerText);
-        alert("Copied!");
+        const textToCopy = document.getElementById('output').innerText;
+        if (!textToCopy || textToCopy.startsWith("Polished UX")) return;
+        
+        navigator.clipboard.writeText(textToCopy).then(() => {
+            alert("Audit copied to clipboard!");
+        });
     }
 
     function clearAll() {
@@ -143,7 +179,8 @@
         document.getElementById('imageInput').value = "";
         document.getElementById('sourceText').value = "";
         document.getElementById('userInput').value = "";
-        document.getElementById('output').innerHTML = "Memory cleared.";
+        document.getElementById('output').innerHTML = "Memory cleared. Ready for a new task.";
+        document.getElementById('progressText').innerText = "Ready";
     }
 </script>
 </body>
