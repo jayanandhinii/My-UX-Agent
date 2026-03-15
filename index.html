@@ -7,183 +7,99 @@
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
     <style>
-        body { background-color: #f0f2f5; font-family: 'Inter', sans-serif; }
-        .card { border: none; border-radius: 16px; box-shadow: 0 8px 24px rgba(0,0,0,0.1); }
-        
-        #output { 
-            min-height: 500px; background: white; border: 1px solid #dee2e6; border-radius: 8px; 
-            padding: 25px; font-size: 15px; line-height: 1.6; overflow-x: auto; color: #333;
-        }
-
-        /* Improved Table Styling for Markdown */
-        #output table { width: 100%; margin-bottom: 1.5rem; border-collapse: collapse; border: 1px solid #eee; }
-        #output th { background-color: #f8f9fa; border: 1px solid #dee2e6; padding: 12px; text-align: left; font-weight: 600; color: #0d6efd; }
-        #output td { border: 1px solid #dee2e6; padding: 12px; vertical-align: top; }
-        #output tr:nth-child(even) { background-color: #fafafa; }
-        
-        .step-label { font-weight: 700; color: #0d6efd; margin-bottom: 8px; display: block; font-size: 0.9rem; text-transform: uppercase; }
-        .progress { height: 8px; display: none; margin-bottom: 20px; border-radius: 10px; }
-        
-        .btn-primary { background-color: #0d6efd; border: none; padding: 12px; font-weight: 600; border-radius: 8px; transition: all 0.3s; }
-        .btn-primary:hover { background-color: #0b5ed7; transform: translateY(-1px); }
+        body { background: #f8f9fa; font-family: 'Inter', sans-serif; }
+        .card { border-radius: 12px; border: none; box-shadow: 0 4px 12px rgba(0,0,0,0.05); }
+        #output { min-height: 400px; background: white; padding: 20px; border-radius: 8px; border: 1px solid #ddd; }
+        .step-label { font-weight: bold; font-size: 0.8rem; text-transform: uppercase; color: #6c757d; display: block; margin-bottom: 5px; }
+        table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+        th, td { border: 1px solid #eee; padding: 10px; text-align: left; }
+        th { background: #f4f7fe; color: #0d6efd; }
     </style>
 </head>
 <body>
 
 <div class="container py-5">
-    <div class="text-center mb-5">
-        <h1 class="fw-bold text-primary">UX  & Content Refinement System</h1>
-
-    </div>
-
     <div class="row g-4">
-        <div class="col-lg-5">
-            <div class="card p-4 h-100">
+        <div class="col-md-5">
+            <div class="card p-4">
+                <h4 class="mb-4 fw-bold">UX Input</h4>
                 
-                <div class="mb-4">
-                    <label class="step-label">Upload image</label>
-                    <input class="form-control" type="file" id="imageInput" accept="image/*">
+                <div class="mb-3">
+                    <label class="step-label">Figma Frame URL</label>
+                    <input type="text" id="figmaUrl" class="form-control" placeholder="https://www.figma.com/design/...">
+                </div>
+
+                <div class="mb-3">
+                    <label class="step-label">Draft Copy / Labels</label>
+                    <textarea id="sourceText" class="form-control" rows="4" placeholder="Paste raw text here..."></textarea>
                 </div>
 
                 <div class="mb-4">
-                    <label class="step-label text-success">Describe feature</label>
-                    <textarea id="sourceText" class="form-control" rows="3" placeholder="Paste UI labels or copy here if no image..."></textarea>
+                    <label class="step-label">Refinement Notes</label>
+                    <textarea id="notes" class="form-control" rows="3" placeholder="e.g. 'Targeting Gen-Z' or 'More professional'"></textarea>
                 </div>
 
-                <hr class="my-4">
-
-                <div class="mb-4">
-                    <label class="step-label" style="color: #fd7e14;">Add comments</label>
-                    <p class="small text-muted">Provide feedback or ask for changes to the previous result.</p>
-                    <textarea id="userInput" class="form-control" style="height: 120px;" placeholder="e.g., 'Make the table shorter' or 'Change tone to professional'"></textarea>
-                </div>
-
-                <button id="genBtn" onclick="runAgent()" class="btn btn-primary btn-lg w-100">
-                    Run Agent 
-                </button>
+                <button id="runBtn" onclick="runAgent()" class="btn btn-primary w-100 py-2 fw-bold">Generate Audit</button>
             </div>
         </div>
 
-        <div class="col-lg-7">
-            <div class="card p-4 h-100">
-                <div class="d-flex justify-content-between align-items-center mb-2">
-                    <div id="progressText" class="text-muted small fw-bold">Generated content</div>
-                    <span id="loadingSpinner" class="spinner-border spinner-border-sm text-primary" style="display: none;"></span>
+        <div class="col-md-7">
+            <div class="card p-4">
+                <div class="d-flex justify-content-between mb-2">
+                    <h4 class="fw-bold">Polished Result</h4>
+                    <button class="btn btn-sm btn-outline-secondary" onclick="clearMem()">Reset</button>
                 </div>
-                
-                <div class="progress" id="progressContainer">
-                    <div id="progressBar" class="progress-bar progress-bar-striped progress-bar-animated bg-success" style="width: 0%"></div>
-                </div>
-
-                <div id="output">Polished UX content will appear here...</div>
-                
-                <div class="mt-4 d-flex gap-2">
-                    <button onclick="copyToClipboard()" class="btn btn-sm btn-outline-secondary px-3">Copy Content</button>
-                    <button onclick="clearAll()" class="btn btn-sm btn-outline-danger px-3">Clear Memory</button>
-                </div>
+                <div id="output">Results will appear here...</div>
             </div>
         </div>
     </div>
 </div>
 
 <script>
-    let sessionHistory = ""; 
+    let sessionHistory = "";
+    const LAMBDA_URL = "https://yk2tf47ong3um7xxo2fgzhob7e0qaajx.lambda-url.ap-south-1.on.aws/";
 
     async function runAgent() {
-        const imageFile = document.getElementById('imageInput').files[0];
-        const sourceText = document.getElementById('sourceText').value;
-        const notes = document.getElementById('userInput').value;
+        const btn = document.getElementById('runBtn');
+        const output = document.getElementById('output');
         
-        const outputDiv = document.getElementById('output');
-        const btn = document.getElementById('genBtn');
-        const progressBar = document.getElementById('progressBar');
-        const progressContainer = document.getElementById('progressContainer');
-        const progressText = document.getElementById('progressText');
-        const spinner = document.getElementById('loadingSpinner');
+        const payload = {
+            figmaUrl: document.getElementById('figmaUrl').value,
+            sourceText: document.getElementById('sourceText').value,
+            notes: document.getElementById('notes').value,
+            history: sessionHistory
+        };
 
-        // Validation: Need at least one source or history
-        if (!imageFile && !sourceText && !sessionHistory) {
-            alert("Please provide a Phase 1 source (Image or Text) to begin.");
-            return;
-        }
-
-        const formData = new FormData();
-        formData.append('notes', notes); 
-        formData.append('sourceText', sourceText); 
-        formData.append('history', sessionHistory); 
-        if (imageFile) formData.append('image', imageFile);
-
-        // UI Initialization
         btn.disabled = true;
-        spinner.style.display = "block";
-        progressContainer.style.display = 'flex';
-        outputDiv.style.opacity = "0.5";
-        
-        let width = 0;
-        const interval = setInterval(() => {
-            if (width < 90) {
-                width += 1.5;
-                progressBar.style.width = width + '%';
-                progressText.innerText = "Double-checking & Refining...";
-            }
-        }, 150);
+        btn.innerText = "Analyzing Design...";
+        output.style.opacity = "0.5";
 
         try {
-            const LAMBDA_URL = "https://yk2tf47ong3um7xxo2fgzhob7e0qaajx.lambda-url.ap-south-1.on.aws/";
-            const response = await fetch(LAMBDA_URL, { method: 'POST', body: formData });
-            
-            if (!response.ok) throw new Error(`Server Error: ${response.status}`);
-            
-            const data = await response.json();
-            
-            // --- SAFETY CHECK TO PREVENT MARKED ERROR ---
-            const finalContent = data.text || data.result || ""; 
+            const res = await fetch(LAMBDA_URL, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            });
 
-            if (!finalContent) {
-                outputDiv.innerHTML = `<div class="alert alert-warning">The agent processed the request but returned no text. Check your Lambda logs.</div>`;
-            } else {
-                sessionHistory = finalContent; // Store for next Phase 2 run
-                outputDiv.innerHTML = marked.parse(finalContent); // Safe parse
-            }
+            const data = await res.json();
+            if (data.error) throw new Error(data.error);
 
-            clearInterval(interval);
-            progressBar.style.width = '100%';
-            progressText.innerText = "Done";
-            outputDiv.style.opacity = "1";
-
-        } catch (err) {
-            console.error(err);
-            outputDiv.innerHTML = `<div class="alert alert-danger"><strong>Error:</strong> ${err}<br><small>Check if the Lambda URL is active and CORS is enabled.</small></div>`;
-            clearInterval(interval);
+            sessionHistory = data.text;
+            output.innerHTML = marked.parse(data.text);
+        } catch (e) {
+            output.innerHTML = `<div class="alert alert-danger">${e.message}</div>`;
         } finally {
             btn.disabled = false;
-            spinner.style.display = "none";
-            setTimeout(() => { 
-                progressContainer.style.display = 'none'; 
-                progressBar.style.width = '0%';
-            }, 3000);
+            btn.innerText = "Generate Audit";
+            output.style.opacity = "1";
         }
     }
 
-    function copyToClipboard() {
-        const textToCopy = document.getElementById('output').innerText;
-        if (!textToCopy || textToCopy.startsWith("Polished UX")) return;
-        
-        navigator.clipboard.writeText(textToCopy).then(() => {
-            alert("Audit copied to clipboard!");
-        });
-    }
-
-    function clearAll() {
+    function clearMem() {
         sessionHistory = "";
-        document.getElementById('imageInput').value = "";
-        document.getElementById('sourceText').value = "";
-        document.getElementById('userInput').value = "";
-        document.getElementById('output').innerHTML = "Memory cleared. Ready for a new task.";
-        document.getElementById('progressText').innerText = "Ready";
+        document.querySelectorAll('input, textarea').forEach(el => el.value = "");
+        document.getElementById('output').innerHTML = "Memory cleared.";
     }
 </script>
 </body>
 </html>
-
-
